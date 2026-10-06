@@ -26,19 +26,26 @@ This repository contains the web application and automated DevOps workflow for A
 
 ### Manual Run (Local Environment)
 1. Clone the repository:
+   
    ```bash
    git clone [https://github.com/matheas-2025tm93164/aceest-fitness-app.git](https://github.com/matheas-2025tm93164/aceest-fitness-app.git)
    cd aceest-fitness-app
 
-2. Create and activate a virtual environment:
-python3 -m venv venv
-source venv/bin/activate
+3. Create and activate a virtual environment:
+   
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
 
-3. Install required packages:
-pip install -r requirements.txt
+5. Install required packages:
+   
+   ```bash
+   pip install -r requirements.txt
 
-4. Start the application:
-python app.py
+7. Start the application:
+   
+   ```bash
+   python app.py
 
 Access the web app at http://localhost:5000.
 
@@ -46,12 +53,17 @@ Access the web app at http://localhost:5000.
 
 Run the test suite using pytest:
 
-# Execute unit tests
+Execute unit tests
+
+```bash
 pytest --verbose
+```
 
-# Run test coverage report
+Run test coverage report
+
+```bash
 pytest --verbose -s
-
+```
 
 ### Docker Containerization
 
