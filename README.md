@@ -63,28 +63,3 @@ docker run -d -p 5000:5000 --name aceest_app aceest-fitness:latest
 
 3. Verify Execution:
 curl http://localhost:5000/health
-
-CI/CD Pipeline & Build Orchestration Logic
-1. GitHub Actions Pipeline (.github/workflows/main.yml)
-Triggered automatically on every push or pull_request to main:
-
-Build & Lint Stage: Installs Python dependencies and runs flake8 to check syntax and code structure.
-
-Docker Image Assembly Stage: Builds the Docker image directly from the workspace.
-
-Automated Testing Stage: Instantiates the Docker container and runs pytest within the isolated container environment.
-
-2. Jenkins Secondary Quality Gate
-Acts as an independent validation layer:
-
-Polls the GitHub repository for updates.
-
-Clones the repository to an isolated workspace on the build server.
-
-Executes a clean virtual environment build, code quality check, Pytest execution, and container assembly to confirm integration before release.
-
-#### Final Push to Complete Submission
-```bash
-git add README.md
-git commit -m "docs: add complete technical documentation in README.md"
-git push origin main
