@@ -1,7 +1,7 @@
 import io
 import os
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, Union
 
 from flask import (
     Flask, render_template_string, request, redirect, 
@@ -23,113 +23,113 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # -----------------------------------------------------------------------------
-# Database Models (Schema Evolution: v2.1.2 - v3.2.4)
+# Database Models
 # -----------------------------------------------------------------------------
 
 class User(db.Model):  # type: ignore [name-defined]
-    """Authentication user table[cite: 316, 317]."""
+    """Authentication user table."""
     __tablename__ = 'users'
-    username = db.Column(db.String(80), primary_key=True)[cite: 317]
+    username = db.Column(db.String(80), primary_key=True)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='admin')[cite: 316]
+    role = db.Column(db.String(20), default='admin')
 
 
 class Client(db.Model):  # type: ignore [name-defined]
-    """Client profile and program details[cite: 311, 312, 314, 316, 317]."""
+    """Client profile and program details."""
     __tablename__ = 'clients'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)[cite: 311]
-    age = db.Column(db.Integer, nullable=False)[cite: 311]
-    weight = db.Column(db.Float, nullable=False)[cite: 311]
-    height = db.Column(db.Float, nullable=True)[cite: 314]
-    target_weight = db.Column(db.Float, nullable=True)[cite: 314]
-    target_adherence = db.Column(db.Float, nullable=True)[cite: 314]
-    program = db.Column(db.String(100), nullable=False)[cite: 311]
-    membership_status = db.Column(db.String(20), default='Active')[cite: 317]
-    membership_end = db.Column(db.String(20), nullable=True)[cite: 316, 317]
+    name = db.Column(db.String(100), nullable=False)
+    age = db.Column(db.Integer, nullable=False)
+    weight = db.Column(db.Float, nullable=False)
+    height = db.Column(db.Float, nullable=True)
+    target_weight = db.Column(db.Float, nullable=True)
+    target_adherence = db.Column(db.Float, nullable=True)
+    program = db.Column(db.String(100), nullable=False)
+    membership_status = db.Column(db.String(20), default='Active')
+    membership_end = db.Column(db.String(20), nullable=True)
 
-    # Relationships[cite: 312, 314]
-    progress_logs = db.relationship('Progress', backref='client', lazy=True, cascade="all, delete-orphan")[cite: 312]
-    workouts = db.relationship('Workout', backref='client', lazy=True, cascade="all, delete-orphan")[cite: 314]
-    metrics = db.relationship('Metric', backref='client', lazy=True, cascade="all, delete-orphan")[cite: 314]
+    # Relationships
+    progress_logs = db.relationship('Progress', backref='client', lazy=True, cascade="all, delete-orphan")
+    workouts = db.relationship('Workout', backref='client', lazy=True, cascade="all, delete-orphan")
+    metrics = db.relationship('Metric', backref='client', lazy=True, cascade="all, delete-orphan")
 
 
 class Progress(db.Model):  # type: ignore [name-defined]
-    """Weekly adherence logs[cite: 312]."""
+    """Weekly adherence logs."""
     __tablename__ = 'progress'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)[cite: 312]
-    week_date = db.Column(db.String(20), nullable=False)[cite: 312]
-    adherence = db.Column(db.Float, nullable=False)[cite: 312]
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    week_date = db.Column(db.String(20), nullable=False)
+    adherence = db.Column(db.Float, nullable=False)
 
 
 class Workout(db.Model):  # type: ignore [name-defined]
-    """Logged workout sessions[cite: 314]."""
+    """Logged workout sessions."""
     __tablename__ = 'workouts'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)[cite: 314]
-    date = db.Column(db.String(20), nullable=False)[cite: 314]
-    workout_type = db.Column(db.String(50), nullable=False)[cite: 314]
-    exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade="all, delete-orphan")[cite: 314]
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    date = db.Column(db.String(20), nullable=False)
+    workout_type = db.Column(db.String(50), nullable=False)
+    exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade="all, delete-orphan")
 
 
 class Exercise(db.Model):  # type: ignore [name-defined]
-    """Exercise details linked to logged workouts[cite: 314]."""
+    """Exercise details linked to logged workouts."""
     __tablename__ = 'exercises'
     id = db.Column(db.Integer, primary_key=True)
-    workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), nullable=False)[cite: 314]
-    name = db.Column(db.String(100), nullable=False)[cite: 314]
-    sets = db.Column(db.Integer, nullable=False)[cite: 314]
-    reps = db.Column(db.Integer, nullable=False)[cite: 314]
-    weight = db.Column(db.Float, nullable=False)[cite: 314]
+    workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    sets = db.Column(db.Integer, nullable=False)
+    reps = db.Column(db.Integer, nullable=False)
+    weight = db.Column(db.Float, nullable=False)
 
 
 class Metric(db.Model):  # type: ignore [name-defined]
-    """Historical body metric tracking[cite: 314]."""
+    """Historical body metric tracking."""
     __tablename__ = 'metrics'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)[cite: 314]
-    date = db.Column(db.String(20), nullable=False)[cite: 314]
-    weight = db.Column(db.Float, nullable=False)[cite: 314]
-    body_fat = db.Column(db.Float, nullable=True)[cite: 314]
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    date = db.Column(db.String(20), nullable=False)
+    weight = db.Column(db.Float, nullable=False)
+    body_fat = db.Column(db.Float, nullable=True)
 
 # -----------------------------------------------------------------------------
-# Business Logic Helpers (v1.1 - v3.2.4)
+# Business Logic Helpers
 # -----------------------------------------------------------------------------
 
 PROGRAM_TEMPLATES: Dict[str, Dict[str, Any]] = {
-    "Hypertrophy": {"factor": 1.2, "routine": "Day 1: Upper Body, Day 2: Lower Body, Day 3: Push, Day 4: Pull"},[cite: 311, 317]
-    "Fat Loss": {"factor": 0.9, "routine": "Day 1: Full Body HIIT, Day 2: Steady Cardio, Day 3: Circuits"},[cite: 311, 317]
-    "Endurance": {"factor": 1.1, "routine": "Day 1: Tempo Run, Day 2: Core & Mobility, Day 3: Long Run"}[cite: 311, 317]
+    "Hypertrophy": {"factor": 1.2, "routine": "Day 1: Upper Body, Day 2: Lower Body, Day 3: Push, Day 4: Pull"},
+    "Fat Loss": {"factor": 0.9, "routine": "Day 1: Full Body HIIT, Day 2: Steady Cardio, Day 3: Circuits"},
+    "Endurance": {"factor": 1.1, "routine": "Day 1: Tempo Run, Day 2: Core & Mobility, Day 3: Long Run"}
 }
 
 def calculate_target_calories(weight: float, program: str) -> float:
-    """Calculates daily target calories based on program multipliers[cite: 311]."""
-    template = PROGRAM_TEMPLATES.get(program, {"factor": 1.0})[cite: 311, 317]
+    """Calculates daily target calories based on program multipliers."""
+    template = PROGRAM_TEMPLATES.get(program, {"factor": 1.0})
     base_bmr = weight * 22.0
-    return round(base_bmr * template["factor"], 2)[cite: 311]
+    return round(base_bmr * template["factor"], 2)
 
 def calculate_bmi_info(weight: float, height_cm: Optional[float]) -> Tuple[Optional[float], str]:
-    """Calculates BMI and risk classification[cite: 314]."""
+    """Calculates BMI and risk classification."""
     if not height_cm or height_cm <= 0:
-        return None, "Height context missing"[cite: 314]
+        return None, "Height context missing"
     
     height_m = height_cm / 100.0
-    bmi = round(weight / (height_m ** 2), 2)[cite: 314]
+    bmi = round(weight / (height_m ** 2), 2)
     
     if bmi < 18.5:
-        risk = "Underweight - Moderate health risk"[cite: 314]
+        risk = "Underweight - Moderate health risk"
     elif 18.5 <= bmi < 25.0:
-        risk = "Normal weight - Low health risk"[cite: 314]
+        risk = "Normal weight - Low health risk"
     elif 25.0 <= bmi < 30.0:
-        risk = "Overweight - Increased health risk"[cite: 314]
+        risk = "Overweight - Increased health risk"
     else:
-        risk = "Obese - High health risk"[cite: 314]
+        risk = "Obese - High health risk"
         
     return bmi, risk
 
 # -----------------------------------------------------------------------------
-# Web Routes & UI Screen Controllers (v3.1.2 - v3.2.4 Frame-based equivalence)
+# Web Routes & UI Screen Controllers
 # -----------------------------------------------------------------------------
 
 BASE_TEMPLATE = """
@@ -177,17 +177,17 @@ BASE_TEMPLATE = """
 """
 
 @app.route('/login', methods=['GET', 'POST'])
-def login() -> Response | str:
-    """Authentication view supporting role logins[cite: 316, 317]."""
+def login() -> Union[Response, str]:
+    """Authentication view supporting role logins."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         
-        user = User.query.get(username)[cite: 316, 317]
+        user = User.query.get(username)
         if user and check_password_hash(user.password_hash, password):
-            session['user'] = user.username[cite: 316]
-            session['role'] = user.role[cite: 316]
-            return redirect(url_for('dashboard'))[cite: 317]
+            session['user'] = user.username
+            session['role'] = user.role
+            return redirect(url_for('dashboard'))
         
         flash("Invalid credentials.")
     
@@ -216,12 +216,12 @@ def logout() -> Response:
 
 @app.route('/')
 @app.route('/dashboard')
-def dashboard() -> Response | str:
-    """Main management dashboard[cite: 311, 314, 317]."""
+def dashboard() -> Union[Response, str]:
+    """Main management dashboard."""
     if 'user' not in session:
-        return redirect(url_for('login'))[cite: 316, 317]
+        return redirect(url_for('login'))
         
-    clients = Client.query.all()[cite: 312]
+    clients = Client.query.all()
     selected_id = request.args.get('client_id', type=int)
     
     selected_client = Client.query.get(selected_id) if selected_id else (clients[0] if clients else None)
@@ -229,14 +229,14 @@ def dashboard() -> Response | str:
     target_calories = 0.0
     bmi_info = (None, "N/A")
     if selected_client:
-        target_calories = calculate_target_calories(selected_client.weight, selected_client.program)[cite: 311]
-        bmi_info = calculate_bmi_info(selected_client.weight, selected_client.height)[cite: 314]
+        target_calories = calculate_target_calories(selected_client.weight, selected_client.program)
+        bmi_info = calculate_bmi_info(selected_client.weight, selected_client.height)
 
     dashboard_html = BASE_TEMPLATE + """
     {% block content %}
     <h1>ACEest Fitness Management Portal</h1>
     <div class="grid">
-        <!-- Left Panel: Client Profile Entry & Management[cite: 311, 314] -->
+        <!-- Left Panel: Client Profile Entry & Management -->
         <div>
             <div class="card">
                 <h3>Add / Update Client Profile</h3>
@@ -279,7 +279,7 @@ def dashboard() -> Response | str:
             </div>
         </div>
 
-        <!-- Right Panel: Dynamic Details & Client Notebook[cite: 311, 314] -->
+        <!-- Right Panel: Dynamic Details & Client Notebook -->
         <div>
             <div class="card">
                 <h3>Select Active Client</h3>
@@ -296,17 +296,17 @@ def dashboard() -> Response | str:
             {% if selected_client %}
             <div class="card">
                 <h2>Client Details: {{ selected_client.name }}</h2>
-                <p><strong>Membership Status:</strong> {{ selected_client.membership_status }} (Expires: {{ selected_client.membership_end or 'N/A' }})</p>[cite: 316, 317]
-                <p><strong>Target Daily Intake:</strong> {{ target_calories }} kcal/day</p>[cite: 311]
-                <p><strong>BMI Index:</strong> {{ bmi_info[0] if bmi_info[0] else 'N/A' }} ({{ bmi_info[1] }})</p>[cite: 314]
+                <p><strong>Membership Status:</strong> {{ selected_client.membership_status }} (Expires: {{ selected_client.membership_end or 'N/A' }})</p>
+                <p><strong>Target Daily Intake:</strong> {{ target_calories }} kcal/day</p>
+                <p><strong>BMI Index:</strong> {{ bmi_info[0] if bmi_info[0] else 'N/A' }} ({{ bmi_info[1] }})</p>
                 
                 <hr style="border-color: #444;">
                 <h3>Management Actions</h3>
-                <a href="{{ url_for('export_pdf', client_id=selected_client.id) }}" class="btn">Export PDF Summary</a>[cite: 316]
-                <a href="{{ url_for('generate_ai_program', client_id=selected_client.id) }}" class="btn">Generate AI Routine</a>[cite: 316, 317]
+                <a href="{{ url_for('export_pdf', client_id=selected_client.id) }}" class="btn">Export PDF Summary</a>
+                <a href="{{ url_for('generate_ai_program', client_id=selected_client.id) }}" class="btn">Generate AI Routine</a>
             </div>
 
-            <!-- Tabular View / Action Cards[cite: 314] -->
+            <!-- Tabular View / Action Cards -->
             <div class="card">
                 <h3>Log Progress & Analytics</h3>
                 <form action="{{ url_for('log_adherence', client_id=selected_client.id) }}" method="POST" style="margin-bottom: 15px;">
@@ -316,7 +316,7 @@ def dashboard() -> Response | str:
                 </form>
 
                 <h4>Progress Visualizations</h4>
-                <img src="{{ url_for('progress_chart', client_id=selected_client.id) }}" alt="Adherence Trend" style="width: 100%; border-radius: 4px; margin-top: 10px;">[cite: 313, 316]
+                <img src="{{ url_for('progress_chart', client_id=selected_client.id) }}" alt="Adherence Trend" style="width: 100%; border-radius: 4px; margin-top: 10px;">
             </div>
             {% endif %}
         </div>
@@ -327,7 +327,7 @@ def dashboard() -> Response | str:
 
 @app.route('/clients/save', methods=['POST'])
 def save_client() -> Response:
-    """Save or update client records in SQLite database[cite: 312, 314]."""
+    """Save or update client records in SQLite database."""
     if 'user' not in session:
         return redirect(url_for('login'))
         
@@ -355,49 +355,48 @@ def save_client() -> Response:
             name=name, age=age, weight=weight, height=height,
             target_weight=target_weight, target_adherence=target_adherence,
             program=program, membership_status='Active',
-            membership_end=datetime.now().strftime('%Y-%12-31')
+            membership_end=datetime.now().strftime('%Y-12-31')
         )
         db.session.add(client)
         
     db.session.commit()
-    flash(f"Client record saved successfully.")
+    flash("Client record saved successfully.")
     return redirect(url_for('dashboard', client_id=client.id))
 
 @app.route('/clients/<int:client_id>/log-adherence', methods=['POST'])
 def log_adherence(client_id: int) -> Response:
-    """Log weekly adherence progress[cite: 312]."""
+    """Log weekly adherence progress."""
     adherence = float(request.form['adherence'])
-    week_date = datetime.now().strftime('Week %U (%Y-%m-%d)')[cite: 312]
+    week_date = datetime.now().strftime('Week %U (%Y-%m-%d)')
     
-    log = Progress(client_id=client_id, week_date=week_date, adherence=adherence)[cite: 312]
+    log = Progress(client_id=client_id, week_date=week_date, adherence=adherence)
     db.session.add(log)
     db.session.commit()
     
-    flash("Adherence progress logged successfully.")[cite: 312]
+    flash("Adherence progress logged successfully.")
     return redirect(url_for('dashboard', client_id=client_id))
 
 @app.route('/clients/<int:client_id>/ai-generate')
 def generate_ai_program(client_id: int) -> Response:
-    """Generates automated workout routine based on program template[cite: 316, 317]."""
+    """Generates automated workout routine based on program template."""
     client = Client.query.get_or_404(client_id)
-    template = PROGRAM_TEMPLATES.get(client.program, {"routine": "General Fitness Routine"})[cite: 317]
+    template = PROGRAM_TEMPLATES.get(client.program, {"routine": "General Fitness Routine"})
     
-    # Store dynamic structure in client workout history[cite: 314, 316, 317]
     new_workout = Workout(
         client_id=client.id, 
         date=datetime.now().strftime('%Y-%m-%d'), 
-        workout_type=f"AI Routine ({client.program})"[cite: 316, 317]
+        workout_type=f"AI Routine ({client.program})"
     )
     db.session.add(new_workout)
     db.session.commit()
     
-    flash(f"AI Template Applied: {template['routine']}")[cite: 316, 317]
+    flash(f"AI Template Applied: {template['routine']}")
     return redirect(url_for('dashboard', client_id=client.id))
 
 @app.route('/clients/<int:client_id>/progress-chart.png')
 def progress_chart(client_id: int) -> Response:
-    """Renders Matplotlib adherence graph dynamically to PNG buffer[cite: 313, 316]."""
-    logs = Progress.query.filter_by(client_id=client_id).all()[cite: 312, 313]
+    """Renders Matplotlib adherence graph dynamically to PNG buffer."""
+    logs = Progress.query.filter_by(client_id=client_id).all()
     
     x = [p.week_date for p in logs] if logs else ["Initial"]
     y = [p.adherence for p in logs] if logs else [0.0]
@@ -406,8 +405,8 @@ def progress_chart(client_id: int) -> Response:
     fig.patch.set_facecolor('#2A2A2A')
     ax.set_facecolor('#1E1E1E')
     
-    ax.plot(x, y, marker='o', color='#D4AF37', linewidth=2)[cite: 313]
-    ax.set_title("Weekly Adherence Progress (%)", color='#D4AF37')[cite: 313]
+    ax.plot(x, y, marker='o', color='#D4AF37', linewidth=2)
+    ax.set_title("Weekly Adherence Progress (%)", color='#D4AF37')
     ax.tick_params(colors='white')
     ax.spines['bottom'].set_color('white')
     ax.spines['top'].set_color('white')
@@ -425,23 +424,23 @@ def progress_chart(client_id: int) -> Response:
 
 @app.route('/clients/<int:client_id>/export-pdf')
 def export_pdf(client_id: int) -> Response:
-    """Generates PDF summary document using FPDF library[cite: 316]."""
+    """Generates PDF summary document using FPDF library."""
     client = Client.query.get_or_404(client_id)
-    calories = calculate_target_calories(client.weight, client.program)[cite: 311]
+    calories = calculate_target_calories(client.weight, client.program)
 
-    pdf = FPDF()[cite: 316]
+    pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"Client Report: {client.name}", ln=True, align='C')[cite: 316]
+    pdf.cell(0, 10, f"Client Report: {client.name}", ln=True, align='C')
     pdf.ln(10)
     
     pdf.set_font("Arial", size=12)
-    pdf.cell(0, 8, f"Age: {client.age}", ln=True)[cite: 316]
-    pdf.cell(0, 8, f"Weight: {client.weight} kg", ln=True)[cite: 316]
-    pdf.cell(0, 8, f"Height: {client.height or 'N/A'} cm", ln=True)[cite: 316]
-    pdf.cell(0, 8, f"Active Program: {client.program}", ln=True)[cite: 316]
-    pdf.cell(0, 8, f"Target Daily Intake: {calories} kcal", ln=True)[cite: 316]
-    pdf.cell(0, 8, f"Membership Expiration: {client.membership_end or 'N/A'}", ln=True)[cite: 316]
+    pdf.cell(0, 8, f"Age: {client.age}", ln=True)
+    pdf.cell(0, 8, f"Weight: {client.weight} kg", ln=True)
+    pdf.cell(0, 8, f"Height: {client.height or 'N/A'} cm", ln=True)
+    pdf.cell(0, 8, f"Active Program: {client.program}", ln=True)
+    pdf.cell(0, 8, f"Target Daily Intake: {calories} kcal", ln=True)
+    pdf.cell(0, 8, f"Membership Expiration: {client.membership_end or 'N/A'}", ln=True)
 
     pdf_bytes = pdf.output(dest='S').encode('latin1')
     
@@ -457,18 +456,18 @@ def export_pdf(client_id: int) -> Response:
 # -----------------------------------------------------------------------------
 
 def init_db() -> None:
-    """Initializes tables and seeds default admin account[cite: 312, 316, 317]."""
+    """Initializes tables and seeds default admin account."""
     with app.app_context():
-        db.create_all()[cite: 312, 314]
-        if not User.query.get('admin'):[cite: 316]
+        db.create_all()
+        if not User.query.get('admin'):
             admin = User(
                 username='admin', 
                 password_hash=generate_password_hash('admin'), 
                 role='admin'
-            )[cite: 316]
+            )
             db.session.add(admin)
             db.session.commit()
 
 if __name__ == '__main__':
-    init_db()[cite: 312, 317]
+    init_db()
     app.run(debug=True, port=5000)
