@@ -132,7 +132,7 @@ def calculate_bmi_info(weight: float, height_cm: Optional[float]) -> Tuple[Optio
 # Web Routes & UI Screen Controllers
 # -----------------------------------------------------------------------------
 
-BASE_TEMPLATE = """
+BASE_HEADER = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,7 +170,9 @@ BASE_TEMPLATE = """
             {% endfor %}
           {% endif %}
         {% endwith %}
-        {% block content %}{% endblock %}
+"""
+
+BASE_FOOTER = """
     </div>
 </body>
 </html>
@@ -191,8 +193,7 @@ def login() -> Union[Response, str]:
         
         flash("Invalid credentials.")
     
-    login_html = BASE_TEMPLATE + """
-    {% block content %}
+    login_html = BASE_HEADER + """
     <h2>System Login</h2>
     <form method="POST" style="max-width: 400px;">
         <div class="form-group">
@@ -205,8 +206,7 @@ def login() -> Union[Response, str]:
         </div>
         <button type="submit" class="btn">Login</button>
     </form>
-    {% endblock %}
-    """
+    """ + BASE_FOOTER
     return render_template_string(login_html)
 
 @app.route('/logout')
@@ -232,8 +232,7 @@ def dashboard() -> Union[Response, str]:
         target_calories = calculate_target_calories(selected_client.weight, selected_client.program)
         bmi_info = calculate_bmi_info(selected_client.weight, selected_client.height)
 
-    dashboard_html = BASE_TEMPLATE + """
-    {% block content %}
+    dashboard_html = BASE_HEADER + """
     <h1>ACEest Fitness Management Portal</h1>
     <div class="grid">
         <!-- Left Panel: Client Profile Entry & Management -->
@@ -321,8 +320,7 @@ def dashboard() -> Union[Response, str]:
             {% endif %}
         </div>
     </div>
-    {% endblock %}
-    """
+    """ + BASE_FOOTER
     return render_template_string(dashboard_html, clients=clients, selected_client=selected_client, target_calories=target_calories, bmi_info=bmi_info)
 
 @app.route('/clients/save', methods=['POST'])
@@ -442,7 +440,8 @@ def export_pdf(client_id: int) -> Response:
     pdf.cell(0, 8, f"Target Daily Intake: {calories} kcal", ln=True)
     pdf.cell(0, 8, f"Membership Expiration: {client.membership_end or 'N/A'}", ln=True)
 
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
+    pdf_output = pdf.output()
+    pdf_bytes = pdf_output.encode('latin1') if isinstance(pdf_output, str) else bytes(pdf_output)
     
     return send_file(
         io.BytesIO(pdf_bytes),
