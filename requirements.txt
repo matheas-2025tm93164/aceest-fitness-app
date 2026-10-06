@@ -2,3 +2,7 @@ Flask==3.0.2
 pytest==8.0.2
 flake8==7.0.0
 gunicorn==21.2.0
+Flask-SQLAlchemy>=3.1.0
+matplotlib>=3.8.0
+fpdf2>=2.7.0
+Werkzeug>=3.0.0
