@@ -1,77 +1,86 @@
-# ACEest Fitness & Gym - Automated CI/CD Pipeline
+# ACEest Fitness & Gym — CI/CD Pipeline
 
-## Project Overview
-This repository contains the web application and automated DevOps workflow for ACEest Fitness & Gym. The system transitions from Python microservices through containerization with Docker, secondary quality validation in Jenkins, and continuous delivery execution using GitHub Actions.
+Flask gym portal with Jenkins CI/CD, SonarQube quality gates, Docker Hub images, and five Kubernetes deployment strategies on Minikube.
 
----
+- GitHub: https://github.com/matheas-2025tm93164/aceest-fitness-app
+- Docker Hub: https://hub.docker.com/r/2025tm93164/aceest-fitness
 
-## Repository Structure
-├── .github/
-│   └── workflows/
-│       └── main.yml        # GitHub Actions CI/CD Pipeline Configuration
-├── app.py                  # Core Flask Web Application & API Service
-├── test_app.py             # Pytest Unit Testing Suite
-├── Dockerfile              # Docker Containerization Specification
-├── .dockerignore           # Exclusions for Docker Build Context
-├── requirements.txt        # Python Application Dependencies
-└── README.md               # Operations & Infrastructure Documentation
+## Pipeline
 
----
+GitHub → Jenkins (Poll SCM) → Pytest → SonarQube Quality Gate → Docker build
+→ Pytest in container → Docker Hub (`v1.0`, `v2.0`, `latest`, `blue`, `green`, `canary`)
+→ `kubectl apply` to Minikube namespace `aceest`.
 
-## Local Setup & Execution Instructions
+## Repository layout
 
-### Prerequisites
-* Python 3.10+
-* Docker Engine 24.0+
+```
+app.py                      Flask application
+test_app.py                 Pytest suite
+Dockerfile
+Jenkinsfile
+sonar-project.properties
+k8s/namespace.yaml
+k8s/rolling/                Rolling update
+k8s/blue-green/             Blue-green + rollback
+k8s/canary/                 Canary (~20%)
+k8s/shadow/                 Shadow / traffic mirror
+k8s/ab-testing/             A/B versions A and B
+```
 
-### Manual Run (Local Environment)
-1. Clone the repository:
-   
-   ```bash
-   git clone [https://github.com/matheas-2025tm93164/aceest-fitness-app.git](https://github.com/matheas-2025tm93164/aceest-fitness-app.git)
-   cd aceest-fitness-app
-
-3. Create and activate a virtual environment:
-   
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-
-5. Install required packages:
-   
-   ```bash
-   pip install -r requirements.txt
-
-7. Start the application:
-   
-   ```bash
-   python app.py
-
-Access the web app at http://localhost:5000.
-
-### Running Unit Tests Manually
-
-Run the test suite using pytest:
-
-Execute unit tests
+## Local run
 
 ```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 pytest --verbose
+python app.py
 ```
 
-Run test coverage report
+App: http://localhost:5000  
+Default login: `admin` / `admin`
+
+## Docker
 
 ```bash
-pytest --verbose -s
+docker build -t 2025tm93164/aceest-fitness:latest .
+docker run -d -p 5000:5000 --name aceest_app 2025tm93164/aceest-fitness:latest
+curl http://localhost:5000/health
+curl http://localhost:5000/version
 ```
 
-### Docker Containerization
+## Deploy all strategies
 
-1. Build Docker Image:
-docker build -t aceest-fitness:latest .
+```bash
+minikube start
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/rolling/
+kubectl apply -f k8s/blue-green/
+kubectl apply -f k8s/canary/
+kubectl apply -f k8s/shadow/
+kubectl apply -f k8s/ab-testing/
+```
 
-2. Run Container:
-docker run -d -p 5000:5000 --name aceest_app aceest-fitness:latest
+| Strategy | Command for URL |
+|---|---|
+| Rolling | `minikube service aceest-rolling -n aceest --url` |
+| Blue-Green | `minikube service aceest-bluegreen -n aceest --url` |
+| Canary | `minikube service aceest-canary -n aceest --url` |
+| Shadow | `minikube service aceest-shadow-proxy -n aceest --url` |
+| A/B A | `minikube service aceest-version-a -n aceest --url` |
+| A/B B | `minikube service aceest-version-b -n aceest --url` |
 
-3. Verify Execution:
-curl http://localhost:5000/health
+Verify: `curl <url>/health` and `curl <url>/version`
+
+## Rollback
+
+```bash
+kubectl rollout undo deployment/aceest-rolling -n aceest
+
+kubectl patch svc aceest-bluegreen -n aceest --type='json' \
+  -p='[{"op":"replace","path":"/spec/selector/version","value":"blue"}]'
+
+kubectl scale deployment aceest-stable --replicas=4 -n aceest
+kubectl scale deployment aceest-canary --replicas=0 -n aceest
+```
+
