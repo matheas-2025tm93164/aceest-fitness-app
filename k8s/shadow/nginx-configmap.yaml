@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aceest-shadow-nginx
+  namespace: aceest
+data:
+  nginx.conf: |
+    events {}
+    http {
+      upstream live {
+        server aceest-live.aceest.svc.cluster.local:5000;
+      }
+      upstream shadow {
+        server aceest-shadow.aceest.svc.cluster.local:5000;
+      }
+      server {
+        listen 80;
+        location / {
+          mirror /mirror;
+          mirror_request_body on;
+          proxy_pass http://live;
+        }
+        location = /mirror {
+          internal;
+          proxy_pass http://shadow$request_uri;
+        }
+      }
+    }

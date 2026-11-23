@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-shadow-proxy
+  namespace: aceest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest
+      role: shadow-proxy
+  template:
+    metadata:
+      labels:
+        app: aceest
+        role: shadow-proxy
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config
+          configMap:
+            name: aceest-shadow-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-shadow-proxy
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    role: shadow-proxy
+  ports:
+    - port: 80
+      targetPort: 80
