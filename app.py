@@ -178,6 +178,16 @@ BASE_FOOTER = """
 </html>
 """
 
+APP_VERSION = os.getenv("APP_VERSION", "v1.0")
+
+@app.route("/health")
+def health():
+    return {"status": "ok", "version": APP_VERSION}, 200
+
+@app.route("/version")
+def version():
+    return {"app": "ACEest Fitness", "version": APP_VERSION}, 200
+
 @app.route('/login', methods=['GET', 'POST'])
 def login() -> Union[Response, str]:
     """Authentication view supporting role logins."""
@@ -469,4 +479,4 @@ def init_db() -> None:
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)
