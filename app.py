@@ -22,6 +22,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+CASCADE_ALL_DELETE_ORPHAN = "all, delete-orphan"
+CLIENTS_ID_FK = "clients.id"
+
 # -----------------------------------------------------------------------------
 # Database Models
 # -----------------------------------------------------------------------------
@@ -49,16 +52,16 @@ class Client(db.Model):  # type: ignore [name-defined]
     membership_end = db.Column(db.String(20), nullable=True)
 
     # Relationships
-    progress_logs = db.relationship('Progress', backref='client', lazy=True, cascade="all, delete-orphan")
-    workouts = db.relationship('Workout', backref='client', lazy=True, cascade="all, delete-orphan")
-    metrics = db.relationship('Metric', backref='client', lazy=True, cascade="all, delete-orphan")
+    progress_logs = db.relationship('Progress', backref='client', lazy=True, cascade=CASCADE_ALL_DELETE_ORPHAN)
+    workouts = db.relationship('Workout', backref='client', lazy=True, cascade=CASCADE_ALL_DELETE_ORPHAN)
+    metrics = db.relationship('Metric', backref='client', lazy=True, cascade=CASCADE_ALL_DELETE_ORPHAN)
 
 
 class Progress(db.Model):  # type: ignore [name-defined]
     """Weekly adherence logs."""
     __tablename__ = 'progress'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey(CLIENTS_ID_FK), nullable=False)
     week_date = db.Column(db.String(20), nullable=False)
     adherence = db.Column(db.Float, nullable=False)
 
@@ -67,10 +70,10 @@ class Workout(db.Model):  # type: ignore [name-defined]
     """Logged workout sessions."""
     __tablename__ = 'workouts'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey(CLIENTS_ID_FK), nullable=False)
     date = db.Column(db.String(20), nullable=False)
     workout_type = db.Column(db.String(50), nullable=False)
-    exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade="all, delete-orphan")
+    exercises = db.relationship('Exercise', backref='workout', lazy=True, cascade=CASCADE_ALL_DELETE_ORPHAN)
 
 
 class Exercise(db.Model):  # type: ignore [name-defined]
@@ -88,7 +91,7 @@ class Metric(db.Model):  # type: ignore [name-defined]
     """Historical body metric tracking."""
     __tablename__ = 'metrics'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey(CLIENTS_ID_FK), nullable=False)
     date = db.Column(db.String(20), nullable=False)
     weight = db.Column(db.Float, nullable=False)
     body_fat = db.Column(db.Float, nullable=True)
@@ -233,8 +236,13 @@ def dashboard() -> Union[Response, str]:
         
     clients = Client.query.all()
     selected_id = request.args.get('client_id', type=int)
-    
-    selected_client = Client.query.get(selected_id) if selected_id else (clients[0] if clients else None)
+
+    if selected_id:
+        selected_client = Client.query.get(selected_id)
+    elif clients:
+        selected_client = clients[0]
+    else:
+        selected_client = None
     
     target_calories = 0.0
     bmi_info = (None, "N/A")
@@ -480,3 +488,4 @@ def init_db() -> None:
 if __name__ == '__main__':
     init_db()
     app.run(host="0.0.0.0", port=5000, debug=False)
+
