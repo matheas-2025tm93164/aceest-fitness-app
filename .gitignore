@@ -5,3 +5,8 @@ __pycache__/
 .pytest_cache/
 .coverage
 .scannerwork/
+coverage.xml
+pytest-results.xml
+instance/
+*.db
+kubectl

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-blue
+  namespace: aceest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aceest
+      slot: bluegreen
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: aceest
+        slot: bluegreen
+        version: blue
+    spec:
+      containers:
+        - name: web
+          image: 2025tm93164/aceest-fitness:v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: APP_VERSION
+              value: "blue-v1.0"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 8
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
